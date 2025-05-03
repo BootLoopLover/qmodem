@@ -21,7 +21,7 @@
 
 ```shell
 echo >> feeds.conf.default
-echo 'src-git modem https://github.com/BootLoopLover/qmodem.git' >> feeds.conf.default
+echo 'src-git qmodem https://github.com/BootLoopLover/qmodem.git' >> feeds.conf.default
 ```
 
 强制更新库驱动 (使用本库驱动):
