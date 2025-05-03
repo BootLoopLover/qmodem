@@ -8,14 +8,6 @@ debug_subject="modem_scan"
 source /lib/functions.sh
 source /usr/share/qmodem/modem_util.sh
 
-
-
-exec_post_init()
-{
-    section_name=$1
-    /usr/share/qmodem/modem_hook.sh $section_name post_init
-}
-
 get_associate_usb()
 {
     target_slot=$1
@@ -111,7 +103,7 @@ scan_pcie()
 {
     #beta
     m_debug "scan_pcie"
-    pcie_net_device_prefixs="rmnet wwan"
+    pcie_net_device_prefixs="rmnet"
     pcie_slots=""
     for pcie_net_device_prefix in $pcie_net_device_prefixs; do
         pcie_netdev=$(ls /sys/class/net | grep -E "${pcie_net_device_prefix}")
@@ -119,8 +111,7 @@ scan_pcie()
             netdev_path=$(readlink -f "/sys/class/net/$netdev/device/")
             [ -z "$netdev_path" ] && continue
             [ -z "$(echo $netdev_path | grep pci)" ] && continue
-            # pcie_slot=$(basename $(dirname $netdev_path))
-	    pcie_slot=$(echo "$netdev_path" | tr '/' '\n' | grep -E '^[0-9a-fA-F]{4}:[0-9a-fA-F:.]+$' | tail -n1)
+            pcie_slot=$(basename $(dirname $netdev_path))
             [ "$pcie_slot" == "net" ] && continue
             m_debug "netdev_path: $netdev_path pcie slot: $pcie_slot"
             [ -z "$pcie_slots" ] && pcie_slots="$pcie_slot" || pcie_slots="$pcie_slots $pcie_slot"
@@ -164,15 +155,6 @@ scan_pcie_slot_interfaces()
                 ;;
         esac
     done
-    interface_mhi_path="$slot_path/mhi0"
-    if [ ! -z "$interface_mhi_path" ]; then
-        wwan0_path="$slot_path/mhi0/wwan/wwan0"
-        if [  -d "$wwan0_path" ];then
-          dun_device=$(ls "$wwan0_path" | grep wwan0at0)
-          [ ! -z "$dun_device" ] &&  dun_device_path="$wwan0_path/$dun_device"
-          [ ! -z "$dun_device_path" ] &&  dun_devices=$(basename "$dun_device_path") 
-	fi
-    fi
     m_debug "net_devices: $net_devices dun_devices: $dun_devices"
     at_ports="$dun_devices" 
     [ -n "$net_devices" ] && get_associate_usb $slot
@@ -284,12 +266,6 @@ match_config()
 	[[ "$name" = *"rm500u-cn"* ]] && name="rm500u-cn"
 
 	[[ "$name" = *"rm500u-ea"* ]] && name="rm500u-ea"
-	#t99w175
-	[[ "$name" = *"mv31-w"* ]] && name="t99w175"
-
-        [[ "$name" = *"T99W175"* ]] && name="t99w175"
-
-        [[ "$name" = *"T99W373"* ]] && name="t99w373"
 
 	#rg200u-cn
     [[ "$name" = *"rg200u-cn"* ]] && name="rg200u-cn"
@@ -302,10 +278,6 @@ match_config()
     platform=$(echo $modem_config | jq -r ".platform")
     define_connect=$(echo $modem_config | jq -r ".define_connect")
     modes=$(echo $modem_config | jq -r ".modes[]")
-    wcdma_available_band=$(echo $modem_config | jq -r ".wcdma_band")
-    lte_available_band=$(echo $modem_config | jq -r ".lte_band")
-    nsa_available_band=$(echo $modem_config | jq -r ".nsa_band")
-    sa_available_band=$(echo $modem_config | jq -r ".sa_band")
 }
 
 get_modem_model()
@@ -335,13 +307,6 @@ add()
     #section name is replace slot .:- with _ 
     section_name=$(echo $slot | sed 's/[\.:-]/_/g')
     is_exist=$(uci -q get qmodem.$section_name)
-    is_fixed_device=$(uci -q get qmodem.${section_name}.fixed_device)
-    if [ "$is_fixed_device" == "1" ];then
-        m_debug "modem $modem_name slot $slot slot_type $slot_type is fixed device, skip"
-        lock -u /tmp/lock/modem_add_$slot
-        exec_post_init $section_name
-        return
-    fi
     case $slot_type in
         "usb")
             scan_usb_slot_interfaces $slot
@@ -413,12 +378,6 @@ set qmodem.$section_name.manufacturer=$manufacturer
 set qmodem.$section_name.platform=$platform
 set qmodem.$section_name.define_connect=$define_connect
 EOF
-
-    [ -n "$wcdma_available_band" ] && uci set qmodem.$section_name.wcdma_band=$wcdma_available_band
-    [ -n "$lte_available_band" ] && uci set qmodem.$section_name.lte_band=$lte_available_band
-    [ -n "$nsa_available_band" ] && uci set qmodem.$section_name.nsa_band=$nsa_available_band
-    [ -n "$sa_available_band" ] && uci set qmodem.$section_name.sa_band=$sa_available_band
-
     for mode in $modes; do
         uci add_list qmodem.$section_name.modes=$mode
     done
@@ -432,8 +391,6 @@ EOF
     uci commit qmodem
     mkdir -p /var/run/qmodem/${section_name}_dir
     lock -u /tmp/lock/modem_add_$slot
-#增加预初始化脚本
-    exec_post_init $section_name
 #判断是否重启网络
     [ -n "$is_exist" ] && [ "$orig_network" == "$net_devices" ] && [ "$orig_at_port" == "/dev/$at_port" ] && [ "$orig_state" == "enabled" ] && [ "$orig_name" == "$modem_name" ] && return
     /etc/init.d/qmodem_network restart

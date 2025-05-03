@@ -11,12 +11,6 @@ debug_subject="modem_dial"
 source "${SCRIPT_DIR}/generic.sh"
 touch $log_file
 
-exec_pre_dial()
-{
-    section=$1
-    /usr/share/qmodem/modem_hook.sh $section pre_dial
-}
-
 get_led()
 {
     config_foreach get_led_by_slot modem-slot
@@ -280,38 +274,11 @@ check_ip()
                         ;;
                 esac
                 ;;
-            "simcom")
-                case $platform in
-                    "qualcomm")
-                        check_ip_command="AT+CGPADDR=6"
-                        ;;
-                esac
-                ;;
-            "meig")
-                case $platform in
-                    "qualcomm")
-                        check_ip_command="AT+CGPADDR=1"
-                        ;;
-                esac
-                ;;
         esac
-        ipaddr=$(at "$at_port" "$check_ip_command" | grep +CGPADDR:)
+        ipaddr=$(at "$at_port" "$check_ip_command" |grep +CGPADDR:)
         if [ -n "$ipaddr" ];then
-            if [ $mtk -eq 1 ] && echo "$ipv4_config" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
-                if [ "$pdp_type" = "ipv4v6" ];then
-                    if ! ping -c 2 -w 5 2400:3200::1 > /dev/null 2>&1; then
-                        m_debug "ipv6 is down,try to restart"
-                        ifdown "$interface6_name" && sleep 2 && ifup "$interface6_name"
-                    fi
-                fi
-            fi
             ipv6=$(echo $ipaddr | grep -oE "\b([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\b")
             ipv4=$(echo $ipaddr | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-            if [ "$manufacturer" = "simcom" ];then
-                ipv4=$(echo $ipaddr | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | grep -v "0\.0\.0\.0" | head -n 1)
-                ipaddr=$(echo $ipaddr | sed 's/\./:/g' | sed 's/+CGPADDR: //g' | sed 's/'$ipv4',//g')
-                ipv6=$(echo $ipaddr | grep -oE "\b([0-9a-fA-F]{0,4}.){2,7}[0-9a-fA-F]{0,4}\b")
-            fi
             disallow_ipv4="0.0.0.0"
             #remove the disallow ip
             if [ "$ipv4" == *"$disallow_ipv4"* ];then
@@ -588,7 +555,6 @@ dial(){
     done
     set_if
     m_debug "dialing $modem_path driver $driver"
-    exec_pre_dial $modem_config
     case $driver in
         "qmi")
             qmi_dial
@@ -786,42 +752,16 @@ at_dial()
                     cgdcont_command="AT+CGDCONT=1,\"$pdp_type\",\"$apn\""
                     ;;
                 "mediatek")
-                    mtk=1
-                    if [ "$apn" = "auto" ];then
-                        apn="cbnet"
-                    fi
                     at_command="AT+CGACT=1,3"
                     cgdcont_command="AT+CGDCONT=3,\"$pdp_type\",\"$apn\""
                     ;;
             esac
             ;;
-        "simcom")
-            case $platform in
-                "qualcomm")
-                    local cnmp=$(at ${at_port} "AT+CNMP?" | grep "+CNMP:" | sed 's/+CNMP: //g' | sed 's/\r//g')
-                    at_command="AT+CNMP=$cnmp;+CNWINFO=1"
-                    cgdcont_command="AT+CGDCONT=1,\"$pdp_type\",\"$apn\""
-                    ;;
-            esac
-            ;;
-        "meig")
-            case $platform in
-                "qualcomm")
-                    at_command=""
-                    cgdcont_command="AT+CGDCONT=1,\"$pdp_type\",\"$apn\""
-                    ;;
-            esac
-            ;;
+            
     esac
     m_debug "dialing vendor:$manufacturer;platform:$platform; $cgdcont_command ; $at_command"
     at "${at_port}" "${cgdcont_command}"
-    if [ $mtk -eq 1 ];then
-        sleep 3
-    fi
     at "$at_port" "$at_command"
-    if [ $mtk -eq 1 ];then
-        sleep 3
-    fi
 }
 
 ip_change_fm350()
@@ -992,7 +932,7 @@ at_dial_monitor()
             fi
             sleep 10
         else
-            #检测ipv4是否变化
+        #检测ipv4是否变化
             sleep 15
             if [ "$ipv4" != "$ipv4_cache" ];then
                 handle_ip_change

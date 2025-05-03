@@ -1,9 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2023 Siriling <siriling@qq.com>
-# Copyright (C) 2025 Fujr <fjrcn@outlook.com>
-_Vendor="quectel"
-_Author="Siriling,Fujr"
-_Maintainer="Fujr <fjrcn@outlook.com>"
+
 source /usr/share/qmodem/generic.sh
 debug_subject="quectel_ctrl"
 #return raw data
@@ -522,10 +518,6 @@ get_lockband_nr()
     lte_avalible_band="1,2,3,4,5,7,8,12,13,14,17,18,19,20,25,26,28,29,30,32,34,38,39,40,41,42,66,71"
     nsa_nr_avalible_band="1,2,3,5,7,8,12,20,25,28,38,40,41,48,66,71,77,78,79,257,258,260,261"
     sa_nr_avalible_band="1,2,3,5,7,8,12,20,25,28,38,40,41,48,66,71,77,78,79"
-    [ -n $(uci -q get qmodem.$config_section.sa_band) ] && sa_nr_avalible_band=$(uci -q get qmodem.$config_section.sa_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.nsa_band) ] && nsa_nr_avalible_band=$(uci -q get qmodem.$config_section.nsa_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.lte_band) ] && lte_avalible_band=$(uci -q get qmodem.$config_section.lte_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.wcdma_band) ] && wcdma_avalible_band=$(uci -q get qmodem.$config_section.wcdma_band | tr '/' ',')
     gw_band=$(at $at_port  $get_wcdma_config_command |grep -e "+QNWPREFCFG: " )
     lte_band=$(at $at_port $get_lte_config_command|grep -e "+QNWPREFCFG: ")
     nsa_nr_band=$(at $at_port $get_nsa_nr_config_command|grep -e "+QNWPREFCFG: ")
@@ -634,10 +626,6 @@ get_lockband_lte12()
     lte_avalible_band="1,2,3,4,5,7,8,12,13,14,17,18,19,20,25,26,28,29,30,32,34,38,39,40,41,42,66,71"
     nsa_nr_avalible_band="1,2,3,5,7,8,12,20,25,28,38,40,41,48,66,71,77,78,79,257,258,260,261"
     sa_nr_avalible_band="1,2,3,5,7,8,12,20,25,28,38,40,41,48,66,71,77,78,79"
-    [ -n $(uci -q get qmodem.$config_section.sa_band) ] && sa_nr_avalible_band=$(uci -q get qmodem.$config_section.sa_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.nsa_band) ] && nsa_nr_avalible_band=$(uci -q get qmodem.$config_section.nsa_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.lte_band) ] && lte_avalible_band=$(uci -q get qmodem.$config_section.lte_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.wcdma_band) ] && wcdma_avalible_band=$(uci -q get qmodem.$config_section.wcdma_band | tr '/' ',')
     gw_band=$(at $at_port  $get_wcdma_config_command |grep -e "+QNWPREFCFG: " )
     lte_band=$(at $at_port $get_lte_config_command|grep -e "+QNWPREFCFG: ")
     nsa_nr_band=$(at $at_port $get_nsa_nr_config_command|grep -e "+QNWPREFCFG: ")
@@ -702,10 +690,6 @@ get_lockband_unisoc()
     lte_avalible_band="1,2,3,4,5,7,8,12,13,14,17,18,19,20,25,26,28,29,30,32,34,38,39,40,41,42,66,71"
     nsa_nr_avalible_band="1,2,3,5,7,8,12,20,25,28,38,40,41,48,66,71,77,78,79,257,258,260,261"
     sa_nr_avalible_band="1,2,3,5,7,8,12,20,25,28,38,40,41,48,66,71,77,78,79"
-    [ -n $(uci -q get qmodem.$config_section.sa_band) ] && sa_nr_avalible_band=$(uci -q get qmodem.$config_section.sa_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.nsa_band) ] && nsa_nr_avalible_band=$(uci -q get qmodem.$config_section.nsa_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.lte_band) ] && lte_avalible_band=$(uci -q get qmodem.$config_section.lte_band | tr '/' ',')
-    [ -n $(uci -q get qmodem.$config_section.wcdma_band) ] && wcdma_avalible_band=$(uci -q get qmodem.$config_section.wcdma_band | tr '/' ',')
     gw_band=$(at $at_port  $get_wcdma_config_command |grep -e "+QNWPREFCFG: " )
     lte_band=$(at $at_port $get_lte_config_command|grep -e "+QNWPREFCFG: ")
     nsa_nr_band=$(at $at_port $get_nsa_nr_config_command|grep -e "+QNWPREFCFG: ")
@@ -1693,4 +1677,3 @@ cell_info()
         ;;
     esac
 }
-
