@@ -21,9 +21,7 @@
 
 ```shell
 echo >> feeds.conf.default
-echo 'src-git modem https://github.com/FUjr/modem_feeds.git;main' >> feeds.conf.default
-./scripts/feeds update modem
-./scripts/feeds install -a -p modem
+echo 'src-git modem https://github.com/BootLoopLover/qmodem.git' >> feeds.conf.default
 ```
 
 强制更新库驱动 (使用本库驱动):
