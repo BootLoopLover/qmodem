@@ -27,7 +27,8 @@ echo 'src-git qmodem https://github.com/BootLoopLover/qmodem.git' >> feeds.conf.
 强制更新库驱动 (使用本库驱动):
 
 ```shell
-./scripts/feeds install -a -f -p modem
+./scripts/feeds update -a
+./scripts/feeds install -a
 ```
 
 ## 集成软件包
